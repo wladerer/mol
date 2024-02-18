@@ -208,11 +208,68 @@ def compare_rdf(args):
         fig.write_image(args.output)
 
 
+def angular_distribution_function(coordinate, bins=1000, r_max=180):
+    """Calculate the angular distribution function (ADF) from a set of XYZ coordinates."""
+    # Calculate the bond angles between all atoms
+    bond_angles = []
+    for i in range(len(coordinate)):
+        for j in range(i + 1, len(coordinate)):
+            for k in range(j + 1, len(coordinate)):
+                v1 = coordinate[i] - coordinate[j]
+                v2 = coordinate[k] - coordinate[j]
+                angle = np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+                bond_angles.append(np.degrees(angle))
+                
+    # Create histogram
+    hist, bin_edges = np.histogram(bond_angles, bins=bins, range=(0, r_max))
+    
+    # Calculate bin centers and ADF
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    adf = hist / (4 * np.pi * bin_centers**2 * (r_max / bins))
+    
+    # Remove the first bin because it is always 0
+    bin_centers = bin_centers[1:]
+    adf = adf[1:]
+    
+    # Normalize ADF
+    adf /= np.sum(adf)
+    
+    return bin_centers, adf
+
+def compare_angular_distribution_function(input_files: list[str], labels: list[str], output_file: str = None):
+    """Plots the angular distribution function of a list of structures"""
+    
+    import plotly.graph_objects as go
+    from pymatgen.core import Molecule
+    
+    fig = go.Figure()
+    
+    for input_file, label in zip(input_files, labels):
+        coords = Molecule.from_file(input_file).coords
+        bin_centers, adf = angular_distribution_function(coords)
+        
+        # Add trace for each input file
+        fig.add_trace(go.Scatter(x=bin_centers, y=adf, mode="lines", name=label))
+        
+    fig.update_layout(
+        title="Angular distribution function",
+        xaxis_title="Angle (°)",
+        yaxis_title="ADF",
+        template="plotly_white"
+    )
+    
+    if not output_file:
+        fig.show()
+    else:
+        fig.write_image(output_file)
+
 def run(args):
     functions = {
         "sort": sort_poscar,
         "rdf": plot_radial_distribution_function,
+        "adf": compare_angular_distribution_function,
         "compare": compare_rdf,
+        
     }
 
     for arg, func in functions.items():
