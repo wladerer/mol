@@ -47,6 +47,7 @@ def run_spectral_analysis(mol: gto.Mole, xc: str, states: int = 15, spectral_wid
 mol_2Li = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Li_cyanoF4TCNQ.xyz')
 mol_2Na = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Na_cyanoF4TCNQ.xyz')
 mol_2Rb = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Rb_cyanoF4TCNQ.xyz')
+
 import concurrent.futures
 
 def run_spectral_analysis_parallel(mol, xc, states, spectral_width):
@@ -75,4 +76,15 @@ df_2Rb['Functional'] = 'B3LYP'
 
 df = pd.concat([df_2Li, df_2Na, df_2Rb])
 #save the dataframe to csv
+df.to_csv('spectra.csv', index=False)
+
 plot_uv_vis_from_df(df, color_key='System')
+
+# run 2Ag
+
+mol_2Ag = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Ag_cyanoF4TCNQ.xyz')
+
+df_2Ag = run_spectral_analysis(mol_2Ag, 'b3lyp', 12, 0.1)
+df_2Ag['System'] = '2Ag'
+df_2Ag['Functional'] = 'B3LYP'
+df_2Ag.to_csv('2Ag_spectra.csv', index=False)
