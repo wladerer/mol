@@ -180,9 +180,7 @@ def compare_rdf(args):
     import plotly.graph_objects as go
     from pymatgen.core import Molecule
 
-    structures = [Molecule.from_file(args.input)]
-    for file in args.compare:
-        structures.append(Molecule.from_file(file))
+    structures = [Molecule.from_file(file) for file in args.input]
 
     fig = go.Figure()
     for structure in structures:
@@ -207,19 +205,58 @@ def compare_rdf(args):
     else:
         fig.write_image(args.output)
 
+def calculate_bond_angles(coords):
+    """
+    Calculate the bond angles from a set of XYZ coordinates.
 
-def angular_distribution_function(coordinate, bins=1000, r_max=180):
-    """Calculate the angular distribution function (ADF) from a set of XYZ coordinates."""
-    # Calculate the bond angles between all atoms
+    Parameters:
+    - coords: numpy array of shape (n_particles, 3) representing XYZ coordinates.
+
+    Returns:
+    - bond_angles: bond angles.
+    """
+    from scipy.spatial import Delaunay
+
+    # Calculate the Delaunay triangulation
+    tri = Delaunay(coords)
+
+    # Get the indices of the vertices of the tetrahedrons
+    tetra = tri.simplices
+
+    # Calculate the bond vectors
+    bond_vectors = []
+    for tet in tetra:
+        for i in range(4):
+            for j in range(i + 1, 4):
+                bond_vectors.append(coords[tet[j]] - coords[tet[i]])
+
+    bond_vectors = np.array(bond_vectors)
+
+    # Calculate the bond angles
     bond_angles = []
-    for i in range(len(coordinate)):
-        for j in range(i + 1, len(coordinate)):
-            for k in range(j + 1, len(coordinate)):
-                v1 = coordinate[i] - coordinate[j]
-                v2 = coordinate[k] - coordinate[j]
-                angle = np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
-                bond_angles.append(np.degrees(angle))
-                
+    for i in range(0, len(bond_vectors), 3):
+        a, b, c = bond_vectors[i : i + 3]
+        bond_angles.append(
+            np.degrees(
+                np.arccos(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+            )
+        )
+        bond_angles.append(
+            np.degrees(
+                np.arccos(np.dot(b, c) / (np.linalg.norm(b) * np.linalg.norm(c)))
+            )
+        )
+        bond_angles.append(
+            np.degrees(
+                np.arccos(np.dot(c, a) / (np.linalg.norm(c) * np.linalg.norm(a)))
+            )
+        )
+
+    return np.array(bond_angles)
+
+def angular_distribution_function(bond_angles, bins=1000, r_max=2):
+    """Calculate the angular distribution function (ADF) from a set of XYZ coordinates."""
+
     # Create histogram
     hist, bin_edges = np.histogram(bond_angles, bins=bins, range=(0, r_max))
     
@@ -227,49 +264,50 @@ def angular_distribution_function(coordinate, bins=1000, r_max=180):
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     adf = hist / (4 * np.pi * bin_centers**2 * (r_max / bins))
     
-    # Remove the first bin because it is always 0
-    bin_centers = bin_centers[1:]
-    adf = adf[1:]
-    
+
     # Normalize ADF
     adf /= np.sum(adf)
     
     return bin_centers, adf
 
-def compare_angular_distribution_function(input_files: list[str], labels: list[str], output_file: str = None):
-    """Plots the angular distribution function of a list of structures"""
-    
+
+
+def compare_adf(args):
+    """Compares the angular distribution function of two structures"""
     import plotly.graph_objects as go
     from pymatgen.core import Molecule
-    
+
+    structures = [Molecule.from_file(file) for file in args.input]
+
     fig = go.Figure()
-    
-    for input_file, label in zip(input_files, labels):
-        coords = Molecule.from_file(input_file).coords
-        bin_centers, adf = angular_distribution_function(coords)
-        
-        # Add trace for each input file
-        fig.add_trace(go.Scatter(x=bin_centers, y=adf, mode="lines", name=label))
-        
+    for structure in structures:
+        coords = structure.cart_coords
+        bond_angles = calculate_bond_angles(coords)
+        bin_centers, adf = angular_distribution_function(bond_angles)
+
+        # Plot ADF
+        fig.add_trace(
+            go.Scatter(x=bin_centers, y=adf, mode="lines", name=structure.formula)
+        )
+
     fig.update_layout(
         title="Angular distribution function",
         xaxis_title="Angle (°)",
         yaxis_title="ADF",
-        template="plotly_white"
+        template="plotly_white",
     )
-    
-    if not output_file:
+
+    if not args.output:
         fig.show()
+
     else:
-        fig.write_image(output_file)
+        fig.write_image(args.output)
 
 def run(args):
     functions = {
         "sort": sort_poscar,
-        "rdf": plot_radial_distribution_function,
-        "adf": compare_angular_distribution_function,
-        "compare": compare_rdf,
-        
+        "rdf": compare_rdf,
+        "adf": compare_adf,        
     }
 
     for arg, func in functions.items():

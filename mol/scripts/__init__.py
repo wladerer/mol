@@ -36,22 +36,17 @@ def structure(subparsers):
     subp_structure = subparsers.add_parser("structure", help="Generate and update structure files")
 
     subp_structure.add_argument(
-        "input", default=sys.stdin, help="Input geometry")
+        "input", default=sys.stdin, help="Input geometry", nargs="+")
     subp_structure.add_argument(
         "--rdf",
         action="store_true",
-        help="Plot the radial distribution function of a structure",
+        help="Plot the radial distribution function of a structure or multiple structures",
     )
+    subp_structure.add_argument("--adf", action="store_true", help="Plot the angular distribution function of a structure or multiple structures")
     subp_structure.add_argument("-o", "--output", type=str, help="Output file name")
     subp_structure.add_argument("--sort", action="store_true", help="Sort atoms")
     subp_structure.add_argument(
         "-l", "--list", action="store_true", help="List the positions of the atoms"
-    )
-    subp_structure.add_argument(
-        "--compare",
-        nargs="+",
-        type=str,
-        help="Compare the radial distribution of multiple structures",
     )
 
 
