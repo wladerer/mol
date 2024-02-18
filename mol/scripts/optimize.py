@@ -2,6 +2,7 @@
 from pyscf import gto
 from pyscf import scf
 from pyscf.geomopt.geometric_solver import optimize
+from mol.utils.io import geometry_from_file
 # from pyscf import solvent
 
 method_dict = {
@@ -31,19 +32,6 @@ def convert_units(args):
     if args.dmax is not None:
         args.dmax = bohr_to_angstrom(args.dmax)
 
-def geometry_from_file(file: str) -> gto.Mole:
-    """
-    Read the geometry from a file and return a gto.Mole object.
-
-    Args:
-        file (str): The path to the file containing the geometry.
-
-    Returns:
-        gto.Mole: The gto.Mole object representing the geometry.
-    """
-    mol = gto.Mole()
-    mol.build(atom=file) # read the geometry from a file
-    return mol
 
 def geometry_opt(mol: gto.Mole, method: str, stdout=None, output=None) -> gto.Mole:
     """
@@ -58,11 +46,15 @@ def geometry_opt(mol: gto.Mole, method: str, stdout=None, output=None) -> gto.Mo
     Returns:
         gto.Mole: The optimized molecular system.
     """
+    method = method_dict[method](mol)
+    
+    #update maximum scf steps of the method
+    method.max_cycle = 300
 
     if stdout is not None:
         mol.stdout = stdout
     
-    opt_mol = optimize(method_dict[method](mol), maxsteps=100)
+    opt_mol = optimize(method, maxsteps=100)
 
     if output is not None:
         opt_mol.tofile(output, format='xyz')
