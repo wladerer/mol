@@ -1,5 +1,6 @@
 import sys
 
+
 def optimize(subparsers):
     subp_optimize = subparsers.add_parser('optimize', help="Optimize molecular geometry using UHF, RHF, or DFT")
     io_group = subp_optimize.add_argument_group("Input/Output")
@@ -69,18 +70,28 @@ def uvis(subparsers):
 
 def ir(subparsers):
     
-    subp_uvis = subparsers.add_parser("ir", help="Plot IR spectra from KSDFT calculations")
-    subp_uvis.add_argument("-o", "--output", type=str, help="Output file name")
-    subp_uvis.add_argument("input", default=sys.stdin, help="Input geometry", nargs="+")
-    subp_uvis.add_argument("-x", "--xc", type=str, help="Functional")
+    subp_ir = subparsers.add_parser("ir", help="Plot IR spectra from KSDFT calculations")
+    subp_ir.add_argument("-o", "--output", type=str, help="Output file name")
+    subp_ir.add_argument("input", default=sys.stdin, help="Input geometry", nargs="+")
     # subp_uvis.add_argument("-k", "--key", type=str, help="Color key")
     
     #argument group for functional options
-    functional_group = subp_uvis.add_argument_group("Functional Options")
+    functional_group = subp_ir.add_argument_group("Functional Options")
     functional_group.add_argument("--plot", action="store_true", help="Plot the IR spectra")
-    # functional_group.add_argument("--save", action="store_true", help="Save the IR spectra to a csv file")
+    functional_group.add_argument("--save", action="store_true", help="Save the IR spectra to a csv file")
     # functional_group.add_argument("--read", action="store_true", help="Plot the IR spectra from a csv file")
     
+    # Generic Information arguments
+    generic_group = subp_ir.add_argument_group("Generic Information")
+    generic_group.add_argument("-c", "--charge", type=int, help="charge")
+    generic_group.add_argument("-s", "--spin", type=int, help="spin")
+    generic_group.add_argument("-m", "--multiplicity", type=int, help="multiplicity")
+    
+    # Method-Specific Options arguments
+    method_group = subp_ir.add_argument_group("Method-Specific Options")
+    method_group.add_argument("-t", "--method", type=str, help="method", choices=["rks", "uks"])
+    method_group.add_argument("-x", "--xc", type=str, help="functional")
+    method_group.add_argument("-b", "--basis", type=str, help="basis")
 
 def setup(subparsers):
     scripts = [
