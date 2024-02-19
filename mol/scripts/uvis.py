@@ -1,16 +1,16 @@
-from mol.utils.spectra import plot_uv_vis_from_df
 from mol.utils.io import geometry_from_file
 from pyscf import gto, dft, tddft
 import pandas as pd
 import numpy as np
 from scipy.constants import physical_constants
+import plotly.express as px
 
 ha_2_ev = 1/physical_constants["electron volt-hartree relationship"][0]
 
 def gaussian(x, mu, sig):
     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
-def run_spectral_analysis(mol: gto.Mole, xc: str, states: int = 15, spectral_width: float = 0.1) -> pd.DataFrame:
+def run_spectral_analysis(mol: gto.Mole, xc: str, states: int = 15, spectral_width: float = 10) -> pd.DataFrame:
 
     # Ground State DFT
     mf = dft.RKS(mol, xc=xc).run()
@@ -42,12 +42,21 @@ def run_spectral_analysis(mol: gto.Mole, xc: str, states: int = 15, spectral_wid
 
     return df
 
+def get_uv_vis_plot_from_df(df: pd.DataFrame, color_key: str | None = None):
+    fig = px.line(df, x="Excitation Energy (eV)", y="Intensity", markers=True, color=color_key)
+    return fig
+
 def run_and_plot(args):
     
     mols = [ geometry_from_file(file) for file in args.input ]
     df = pd.concat([ run_spectral_analysis(mol, args.xc, args.states, args.spectral_width) for mol in mols ])
     # formulae = [] for later, if we want to add the formulae to the plot as labels
-    plot_uv_vis_from_df(df, color_key=args.key)
+    fig = get_uv_vis_plot_from_df(df, color_key=args.key)
+    
+    if not args.output:
+        fig.show()
+    else:
+        fig.write_image(args.output)
     
     
 def run_and_save(args):
@@ -59,7 +68,12 @@ def run_and_save(args):
 def plot_from_csv(args):
     
     df = pd.read_csv(args.input)
-    plot_uv_vis_from_df(df, color_key=args.key)
+    fig = get_uv_vis_plot_from_df(df, color_key=args.key)
+    
+    if not args.output:
+        fig.show()
+    else:
+        fig.write_image(args.output)
     
 
 def run(args):

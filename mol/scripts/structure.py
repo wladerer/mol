@@ -2,6 +2,7 @@
 
 import numpy as np
 from ase.io import read
+import json
 
 
 def get_atoms(args):
@@ -302,12 +303,46 @@ def compare_adf(args):
 
     else:
         fig.write_image(args.output)
+        
+def structure_from_pubchem(cid: int, output: str = None):
+    """Gets a structure from PubChem"""
+    from pymatgen.core import Molecule
+    import pubchempy as pcp
+    compound = pcp.Compound.from_cid(cid, record_type='3d')
+    
+    #convert json data to xyz
+    compound_dict = compound.to_dict(properties=['atoms'])
+    symbols_and_coordinates = [(atom['element'], atom['x'], atom['y'], atom['z']) for atom in compound_dict['atoms']]
+
+    #create a molecule
+    species = [symbol for symbol, *_ in symbols_and_coordinates]
+    coords = np.array([coord for _, *coord in symbols_and_coordinates])
+    molecule = Molecule(species, coords)
+    
+    if not output:
+        print(molecule.to(fmt="xyz"))
+    else:
+        molecule.to(fmt="xyz", filename=output)
+
+def query_structure(args):
+    """Queries XYZ file from PubChem"""
+    #output format is {cid}_{output}
+    if args.output:
+        output_basenames = [f"{cid}_{args.output}" for cid in args.input]
+        for cid, output in zip(args.input, output_basenames):
+            structure_from_pubchem(cid, output)
+    else:
+        for cid in args.input:
+            structure_from_pubchem(cid)
+            
+
 
 def run(args):
     functions = {
         "sort": sort_poscar,
         "rdf": compare_rdf,
-        "adf": compare_adf,        
+        "adf": compare_adf,
+        "query": query_structure,       
     }
 
     for arg, func in functions.items():
