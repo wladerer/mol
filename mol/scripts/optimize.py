@@ -33,7 +33,7 @@ def convert_units(args):
         args.dmax = bohr_to_angstrom(args.dmax)
 
 
-def geometry_opt(mol: gto.Mole, method: str, stdout=None, output=None) -> gto.Mole:
+def geometry_opt(mol: gto.Mole, method: str, max_scf_steps: int, max_ionic_steps: int, stdout=None, output=None) -> gto.Mole:
     """
     Perform geometry optimization on a molecular system.
 
@@ -49,12 +49,13 @@ def geometry_opt(mol: gto.Mole, method: str, stdout=None, output=None) -> gto.Mo
     method = method_dict[method](mol)
     
     #update maximum scf steps of the method
-    method.max_cycle = 300
+    if max_scf_steps is not None:
+        method.max_cycle = max_scf_steps
 
     if stdout is not None:
         mol.stdout = stdout
     
-    opt_mol = optimize(method, maxsteps=100)
+    opt_mol = optimize(method, maxsteps=max_ionic_steps)
 
     if output is not None:
         opt_mol.tofile(output, format='xyz')
@@ -66,7 +67,7 @@ def run(args):
     
     convert_units(args)
 
-    mol = geometry_from_file(args.input)
+    mol = geometry_from_file(args.input, args.charge, args.spin, args.basis)
 
     #update mol with user input
     if args.charge is not None:
@@ -81,6 +82,6 @@ def run(args):
         mol.basis = args.basis
     
     
-    geometry_opt(mol, args.method, args.stdout, args.output)
+    geometry_opt(mol, args.method, args.maxscf, args.maxgeom, args.stdout, args.output)
 
     return None

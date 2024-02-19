@@ -24,7 +24,8 @@ def optimize(subparsers):
     method_group.add_argument("-b", "--basis", type=str, help="basis")
 
     # Convergence Options arguments
-    convergence_group.add_argument("-n", "--maxsteps", type=int, help="maximum number of optimization steps")
+    convergence_group.add_argument("-E", "--maxscf", type=int, help="maximum number of SCF steps")
+    convergence_group.add_argument("-n", "--maxgeom", type=int, help="maximum number of ionic optimization steps")
     convergence_group.add_argument("-e", "--total-energy", type=float, help="convergence energy (eV)")
     convergence_group.add_argument("-g", "--grms", type=float, help="convergence grms (eV/Angstrom)")
     convergence_group.add_argument("-G", "--gmax", type=float, help="convergence gmax (eV/Angstrom)")
