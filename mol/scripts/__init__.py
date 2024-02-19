@@ -48,12 +48,45 @@ def structure(subparsers):
     subp_structure.add_argument(
         "-l", "--list", action="store_true", help="List the positions of the atoms"
     )
+    
+def uvis(subparsers):
+    
+    subp_uvis = subparsers.add_parser("uvis", help="Plot UV-Vis spectra from TDDFT calculations")
+    subp_uvis.add_argument("-o", "--output", type=str, help="Output file name")
+    subp_uvis.add_argument("input", default=sys.stdin, help="Input geometry", nargs="+")
+    subp_uvis.add_argument("-x", "--xc", type=str, help="Functional")
+    subp_uvis.add_argument("-s", "--states", type=int, help="Number of states")
+    subp_uvis.add_argument("-w", "--spectral-width", type=float, help="Spectral width")
+    subp_uvis.add_argument("-k", "--key", type=str, help="Color key")
+    
+    #argument group for functional options
+    functional_group = subp_uvis.add_argument_group("Functional Options")
+    functional_group.add_argument("--plot", action="store_true", help="Plot the UV-Vis spectra")
+    functional_group.add_argument("--save", action="store_true", help="Save the UV-Vis spectra to a csv file")
+    functional_group.add_argument("--read", action="store_true", help="Plot the UV-Vis spectra from a csv file")
+    
 
+def ir(subparsers):
+    
+    subp_uvis = subparsers.add_parser("ir", help="Plot IR spectra from KSDFT calculations")
+    subp_uvis.add_argument("-o", "--output", type=str, help="Output file name")
+    subp_uvis.add_argument("input", default=sys.stdin, help="Input geometry", nargs="+")
+    subp_uvis.add_argument("-x", "--xc", type=str, help="Functional")
+    # subp_uvis.add_argument("-k", "--key", type=str, help="Color key")
+    
+    #argument group for functional options
+    functional_group = subp_uvis.add_argument_group("Functional Options")
+    functional_group.add_argument("--plot", action="store_true", help="Plot the IR spectra")
+    # functional_group.add_argument("--save", action="store_true", help="Save the IR spectra to a csv file")
+    # functional_group.add_argument("--read", action="store_true", help="Plot the IR spectra from a csv file")
+    
 
 def setup(subparsers):
     scripts = [
         structure,
         optimize,
+        uvis,
+        ir
     ]
     for script in scripts:
         script(subparsers)

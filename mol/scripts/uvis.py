@@ -1,7 +1,6 @@
-from mol.utils.irplot import plot_uv_vis_from_df
+from mol.utils.spectra import plot_uv_vis_from_df
 from mol.utils.io import geometry_from_file
 from pyscf import gto, dft, tddft
-
 import pandas as pd
 import numpy as np
 from scipy.constants import physical_constants
@@ -43,48 +42,36 @@ def run_spectral_analysis(mol: gto.Mole, xc: str, states: int = 15, spectral_wid
 
     return df
 
+def run_and_plot(args):
+    
+    mols = [ geometry_from_file(file) for file in args.input ]
+    df = pd.concat([ run_spectral_analysis(mol, args.xc, args.states, args.spectral_width) for mol in mols ])
+    # formulae = [] for later, if we want to add the formulae to the plot as labels
+    plot_uv_vis_from_df(df, color_key=args.key)
+    
+    
+def run_and_save(args):
+    
+    mols = [ geometry_from_file(file) for file in args.input ]
+    df = pd.concat([ run_spectral_analysis(mol, args.xc, args.states, args.spectral_width) for mol in mols ])
+    df.to_csv(args.output, index=False)
+    
+def plot_from_csv(args):
+    
+    df = pd.read_csv(args.input)
+    plot_uv_vis_from_df(df, color_key=args.key)
+    
 
-mol_2Li = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Li_cyanoF4TCNQ.xyz')
-mol_2Na = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Na_cyanoF4TCNQ.xyz')
-mol_2Rb = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Rb_cyanoF4TCNQ.xyz')
-
-import concurrent.futures
-
-def run_spectral_analysis_parallel(mol, xc, states, spectral_width):
-    return run_spectral_analysis(mol, xc, states, spectral_width)
-
-with concurrent.futures.ProcessPoolExecutor() as executor:
-    futures = []
-    futures.append(executor.submit(run_spectral_analysis_parallel, mol_2Li, 'b3lyp', 12, 0.1))
-    futures.append(executor.submit(run_spectral_analysis_parallel, mol_2Na, 'b3lyp', 12, 0.1))
-    futures.append(executor.submit(run_spectral_analysis_parallel, mol_2Rb, 'b3lyp', 12, 0.1))
-
-    df_2Li = futures[0].result()
-    df_2Na = futures[1].result()
-    df_2Rb = futures[2].result()
-
-#combine all the dataframes
-df_2Li['System'] = '2Li'
-df_2Na['System'] = '2Na'
-df_2Rb['System'] = '2Rb'
-
-#add functionals to the dataframes
-
-df_2Li['Functional'] = 'B3LYP'
-df_2Na['Functional'] = 'B3LYP'
-df_2Rb['Functional'] = 'B3LYP'
-
-df = pd.concat([df_2Li, df_2Na, df_2Rb])
-#save the dataframe to csv
-df.to_csv('spectra.csv', index=False)
-
-plot_uv_vis_from_df(df, color_key='System')
-
-# run 2Ag
-
-mol_2Ag = geometry_from_file('/home/wladerer/research/F4TCNQ/cyano/opt/opt_2Ag_cyanoF4TCNQ.xyz')
-
-df_2Ag = run_spectral_analysis(mol_2Ag, 'b3lyp', 12, 0.1)
-df_2Ag['System'] = '2Ag'
-df_2Ag['Functional'] = 'B3LYP'
-df_2Ag.to_csv('2Ag_spectra.csv', index=False)
+def run(args):
+    
+    functions = {
+        "plot": run_and_plot,
+        "save": run_and_save,
+        "read": plot_from_csv
+    }
+    
+    for key, value in functions.items():
+        if getattr(args, key):
+            value(args)
+            break
+    

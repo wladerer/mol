@@ -6,5 +6,7 @@ def plot_uv_vis_from_df(df: pd.DataFrame, color_key: str | None = None):
     fig = px.line(df, x="Excitation Energy (eV)", y="Intensity", markers=True, color=color_key)
     fig.show()
     
-
+def plot_ir_from_df(df: pd.DataFrame, color_key: str | None = None):
+    fig = px.line(df, x="Wavenumber (cm^-1)", y="Intensity", markers=True, color=color_key)
+    fig.show()
 
