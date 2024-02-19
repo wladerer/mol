@@ -30,7 +30,11 @@ def run_and_plot(args):
             fig.show()
     else:
         for i, fig in enumerate(figs):
-            fig.savefig(args.output + str(i) + ".png")
+            if len(figs) > 1:
+                for i, fig in enumerate(figs):
+                    fig.savefig(f"{i+1}_{args.output}")
+            else:
+                figs[0].savefig(args.output)
 
 def run(args):
     
