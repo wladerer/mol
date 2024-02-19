@@ -11,6 +11,7 @@ setup(
         "pymatgen",
         "mp-api",
         "pydantic",
+        "geometric"
     ],
     entry_points={"console_scripts": ["mol = mol.cli:main"]},
 )
