@@ -60,7 +60,7 @@ def uvis(subparsers):
     subp_uvis.add_argument("input", default=sys.stdin, help="Input geometry", nargs="+")
     subp_uvis.add_argument("-x", "--xc", type=str, help="Functional")
     subp_uvis.add_argument("-s", "--states", type=int, help="Number of states", default=15)
-    subp_uvis.add_argument("-w", "--spectral-width", type=float, help="Spectral width", default=5)
+    subp_uvis.add_argument("-w", "--spectral-width", type=float, help="Spectral width", default=0.1)
     subp_uvis.add_argument("-k", "--key", type=str, help="Color key")
     
     #argument group for functional options
